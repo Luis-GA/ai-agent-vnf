@@ -1,0 +1,12 @@
+apiVersion: v1
+name: ai-agent
+description: A chart for manage proactive monitoring
+version: 1.0.0
+keywords:
+  - AI
+home: "https://github.com/Luis-GA"
+sources:
+  - "https://github.com/Luis-GA"
+maintainers:
+  - name: Luis Gómez
+    email: luis.gomez.alonso95@gmail.com

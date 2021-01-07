@@ -1,0 +1,56 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+jobs:
+  - name: ai-agent
+    image:
+      repository: luisupm/ai-agent
+      tag: latest
+      imagePullPolicy: IfNotPresent
+    schedule: "* * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    env:
+
+    # Configuration for AI-Agent
+    config:
+      version: 1
+      # Select the AI Server to request
+      AIServer:
+        name: TensorFlow
+        type: tensorflow
+        url: "http://192.168.137.46:8501"
+        version: v1
+      predictions:
+          # List of predictions
+        - model: cpu_timeseriesforecast # Model name required by the AIServer
+          version: 1 # Model version OPTIONAL
+          active: False
+          monitoring:
+            prometheusQuery: "osm_average_memory_utilization" # Prometheus query to obtain the timeseries
+            stepsTime: 1 # Time to obtain a timeseries probe (minutes)
+            dataWindowTime: 1440 # Time window of the timeseries imput to the AI-model
+          threshold:
+            mode: gt # Greater than
+            value: 90 # Value to perform a trigger action
+            windowTime: 60 # Time performed minutes
+
+        - model: A2-traffic-model
+          active: False
+          monitoring:
+            url: 192.168.137.34 #IP or VNF-ref. Example http://192.168.137.55 OR vnf
+            port: 3000
+          threshold:
+            function_name: evaluator
+            logic: "evaluator = lambda x: True if (x['predictions'][0][0] > x['predictions'][0][1]) else False "
+            
+        - model: CPU-forecast-model
+          active: True
+          monitoring:
+            url: 192.168.137.34
+            port: 4000
+          threshold:
+            function_name: evaluator
+            logic: "evaluator = lambda x: True if (x['predictions'][0][0]*100) > 85 else False"

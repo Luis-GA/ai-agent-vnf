@@ -1,0 +1,109 @@
+vnfd-catalog:
+  vnfd:
+  - connection-point:
+    - name: vnf-mgmt
+      type: VPORT
+    - name: vnf-internal
+      port-security-enabled: false
+      type: VPORT
+    - name: vnf-external
+      port-security-enabled: false
+      type: VPORT
+    description: A VNF monitored by the AI-Agent
+    id: cpu_forecast_ai_agent_vnf
+    mgmt-interface:
+      cp: vnf-mgmt
+    monitoring-param:
+    - aggregation-type: AVERAGE
+      id: metric_vim_vnf_cpu
+      name: metric_vim_vnf_cpu
+      vdu-monitoring-param:
+        vdu-monitoring-param-ref: metric_vdu_cpu
+        vdu-ref: vyos-VM
+    - aggregation-type: AVERAGE
+      id: metric_vim_vnf_memory
+      name: metric_vim_vnf_memory
+      vdu-monitoring-param:
+        vdu-monitoring-param-ref: metric_vdu_memory
+        vdu-ref: vyos-VM
+    name: cpu_prediction_ai_agent_vnf
+    scaling-group-descriptor:
+    - max-instance-count: 5
+      min-instance-count: 0
+      name: vyos-VM_autoscale
+      scaling-policy:
+      - cooldown-time: 120
+        name: cpu_scaling_policy
+        scaling-criteria:
+        - name: default-scale
+          scale-in-relational-operation: LT
+          scale-in-threshold: 512
+          scale-out-relational-operation: GT
+          scale-out-threshold: 1024
+          vnf-monitoring-param-ref: metric_vim_vnf_memory
+        scaling-type: automatic
+      vdu:
+      - count: 1
+        vdu-id-ref: vyos-VM
+    short-name: cpu_prediction_ai_agent_vnf
+    vdu:
+    - cloud-init-file: vyos-userdata
+      count: 1
+      id: vyos-VM
+      image: vyos-1.1.7
+      interface:
+      - external-connection-point-ref: vnf-mgmt
+        name: vdu-eth0
+        position: 0
+        type: EXTERNAL
+        virtual-interface:
+          type: PARAVIRT
+      - external-connection-point-ref: vnf-internal
+        name: vdu-eth1
+        position: 1
+        type: EXTERNAL
+        virtual-interface:
+          type: PARAVIRT
+      - external-connection-point-ref: vnf-external
+        name: vdu-eth2
+        position: 2
+        type: EXTERNAL
+        virtual-interface:
+          type: PARAVIRT
+      monitoring-param:
+      - id: metric_vdu_cpu
+        nfvi-metric: cpu_utilization
+      - id: metric_vdu_memory
+        nfvi-metric: average_memory_utilization
+      name: vyos-VM
+      supplemental-boot-data:
+        boot-data-drive: true
+      vm-flavor:
+        memory-mb: 2048
+        storage-gb: 10
+        vcpu-count: 1
+    vendor: Atos
+    version: '0.1'
+    vnf-configuration:
+      config-primitive:
+      - execution-environment-ref: monitor
+        name: generate_snmp
+      execution-environment-list:
+      - connection-point-ref: vnf-mgmt
+        helm-chart: eechart
+        id: monitor
+        metric-service: snmpexporter
+      initial-config-primitive:
+      - execution-environment-ref: monitor
+        name: config
+        parameter:
+        - name: ssh-hostname
+          value: vyos-osmTest
+        - name: ssh-username
+          value: osm
+        - name: ssh-password
+          value: osm2020
+        seq: 1
+      - execution-environment-ref: monitor
+        name: generate_snmp
+        seq: 2
